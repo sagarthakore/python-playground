@@ -1,6 +1,6 @@
 import random
 
-candidates = ['Ganshyam Dada', 'Anila Ba', 'Usha Ba', 'Rupa Mami', 'Krupa Maasi', 'Kaushal Mama', 'Mom', 'Amisha Maasi']
+candidates = ['Candidate A', 'Candidate B', 'Candidate C', 'Candidate D', 'Candidate E', 'Candidate F', 'Candidate G', 'Candidate H']
 
 random.shuffle(candidates)
 

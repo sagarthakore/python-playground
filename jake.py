@@ -31,6 +31,12 @@ def unsubscribe(chat_id):
     bot.sendMessage(chat_id, "Unsubscribed!")        
         
 
+def sendNotification(message):
+    f = open("subscribers.txt", "r")
+    for line in f:
+        bot.sendMessage(line, message)
+
+
 def handle(msg):
     chat_id = msg['chat']['id']
     command = msg['text']
@@ -51,7 +57,7 @@ def handle(msg):
         bot.sendMessage(chat_id, "Oops! I don't seem to understand this command.")
 
 
-bot = telepot.Bot('---key here---')
+bot = telepot.Bot('494856102:AAHCA__TrYFx6RjziauVINutEbdewrmHhDk')
 
 MessageLoop(bot, handle).run_as_thread()
 print('I am listening ...')

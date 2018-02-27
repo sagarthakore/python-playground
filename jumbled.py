@@ -11,7 +11,7 @@ def readfile():
                 words.append(line.strip())
     except EnvironmentError:
         print("Shoot! Could not find words_en.txt")
-        print("Make sure this words_en.txt and this file is in the same folder and try again!")
+        print("Make sure that words_en.txt and this file are in the same folder and try again!")
         exit(1)
     return words
 

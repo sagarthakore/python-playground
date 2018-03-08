@@ -2,6 +2,7 @@ import os
 import telepot
 import time
 import urllib3
+import csv
 from telepot.loop import MessageLoop
 
 # You can leave this bit out if you're using a paid PythonAnywhere account
@@ -17,7 +18,13 @@ def sendNotification(message):
     for line in f:
         bot.sendMessage(line, message)
 
-bot = telepot.Bot('533962107:AAHuRBV5q2drQaSkh11CQQyH5ltsV1-dAFA')
+keys = {}
+with open('keys.csv', newline='') as keystore:
+    reader = csv.reader(keystore)
+    next(reader)
+    keys = dict(reader)
+
+bot = telepot.Bot(keys['jaden'])
 
 def readfile():
     """Read the file that contains all the dictionary words and return them as an array"""

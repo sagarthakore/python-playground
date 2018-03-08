@@ -4,6 +4,7 @@ import datetime
 import telepot
 import os
 import subprocess
+import csv
 import mmap
 from telepot.loop import MessageLoop
 from requests import get
@@ -62,7 +63,13 @@ def handle(msg):
         bot.sendMessage(chat_id, "Oops! I don't seem to understand this command.")
 
 
-bot = telepot.Bot('494856102:AAHCA__TrYFx6RjziauVINutEbdewrmHhDk')
+keys = {}
+with open('keys.csv', newline='') as keystore:
+    reader = csv.reader(keystore)
+    next(reader)
+    keys = dict(reader)
+
+bot = telepot.Bot(keys['jake'])
 
 MessageLoop(bot, handle).run_as_thread()
 print('I am listening ...')

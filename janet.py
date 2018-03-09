@@ -24,7 +24,7 @@ with open('keys.csv', newline='') as keystore:
     next(reader)
     keys = dict(reader)
 
-bot = telepot.Bot(keys['jake'])
+bot = telepot.Bot(keys['janet'])
 
 if sys.argv[1] == "message" :
     sendNotification(sys.argv[2])

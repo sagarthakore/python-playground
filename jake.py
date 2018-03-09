@@ -6,9 +6,17 @@ import os
 import subprocess
 import csv
 import mmap
+import urllib3
 from telepot.loop import MessageLoop
 from requests import get
 
+# # You can leave this bit out if you're using a paid PythonAnywhere account
+proxy_url = "http://proxy.server:3128"
+telepot.api._pools = {
+    'default': urllib3.ProxyManager(proxy_url=proxy_url, num_pools=3, maxsize=10, retries=False, timeout=30),
+}
+telepot.api._onetime_pool_spec = (urllib3.ProxyManager, dict(proxy_url=proxy_url, num_pools=1, maxsize=1, retries=False, timeout=30))
+# end of the stuff that's only needed for free accounts
 
 def subscribe(chat_id):
     with open("subscribers.txt", "r+") as f:
@@ -45,12 +53,14 @@ def handle(msg):
 
     print('Got command: %s' % command)
 
-    if command == '/roll':
-        bot.sendMessage(chat_id, random.randint(1,6))
+    if command == '/start':
+        bot.sendMessage(chat_id, "Hi! I'm Jake! I am a half baked AI bot running on Sagar's Work Machine ready to perform some tasks for you. Pick a command from the list and I will try my best!" + "\n1. /roll - Toll a six sided die.\n2. /time - Show the current system time.\n3. /about - Information about the bot.\n4. /crypto - Get current crypto currency exchange rates.")
+    elif command == '/roll':
+        bot.sendMessage(chat_id, str(random.randint(1,6)) + "  That was quick wasn't it?")
     elif command == '/time':
-        bot.sendMessage(chat_id, str(datetime.datetime.now()))
+        bot.sendMessage(chat_id, "The time is " + str(datetime.datetime.now()) + " Well, my watch is quite precise unlike yours!")
     elif command == '/about':
-        bot.sendMessage(chat_id, 'Bot created by Sagar. Running on Work Machine.')
+        bot.sendMessage(chat_id, "Hi I'm Jake! I am a half baked AI bot created by Sagar. He is still training me to be more useful. Currently I am running on his Work Machine.")
     elif command == '/subscribe':
         subscribe(str(chat_id))
     elif command == '/unsubscribe':
@@ -60,7 +70,7 @@ def handle(msg):
         response = get(url).json()
         bot.sendMessage(chat_id, "BTC: $"+response['data'][0]['amount'] + "\n" + "BCH: $"+response['data'][1]['amount'] + "\n" + "ETH: $"+response['data'][2]['amount'] + "\n" + "LTC: $"+response['data'][3]['amount'])
     else:
-        bot.sendMessage(chat_id, "Oops! I don't seem to understand this command.")
+        bot.sendMessage(chat_id, "Oops! I don't seem to understand this command. These are the only commands I can understand: " + "\n1. /roll - Toll a six sided die.\n2. /time - Show the current system time.\n3. /about - Information about the me.\n4. /crypto - Get current crypto currency exchange rates.")
 
 
 keys = {}

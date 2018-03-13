@@ -5,7 +5,8 @@ scores = {"A": 1, "C": 3, "B": 3, "E": 1, "D": 2, "G": 2,
           "X": 8, "Z": 10}
 
 # Get the Scrabble rack from the user.
-rack = input("Enter scrabble rack using capital letters: ")
+lrack = input("Enter scrabble rack without spaces: ")
+rack = lrack.upper()
 
 # Turn the words in the scrabblewords.txt file into a Python list.
 wordlist = []

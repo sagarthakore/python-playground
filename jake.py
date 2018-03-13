@@ -58,7 +58,7 @@ def handle(msg):
     elif command == '/roll':
         bot.sendMessage(chat_id, str(random.randint(1,6)) + "  That was quick wasn't it?")
     elif command == '/time':
-        bot.sendMessage(chat_id, "The time is " + str(datetime.datetime.now()) + " Well, my watch is quite precise unlike yours!")
+        bot.sendMessage(chat_id, "The time is " + str(time.strftime("%I:%M %p")))
     elif command == '/about':
         bot.sendMessage(chat_id, "Hi I'm Jake! I am a half baked AI bot created by Sagar. He is still training me to be more useful. Currently I am running on his Work Machine.")
     elif command == '/subscribe':

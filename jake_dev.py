@@ -1,6 +1,5 @@
 import time
 import random
-import datetime
 import telepot
 import os
 import subprocess
@@ -9,6 +8,20 @@ import mmap
 import urllib3
 from telepot.loop import MessageLoop
 from requests import get
+
+keys = {}
+with open('keys.csv', newline='') as keystore:
+    reader = csv.reader(keystore)
+    next(reader)
+    keys = dict(reader)
+
+bot = telepot.Bot(keys['jake_dev'])
+
+data = {}
+with open('data.csv', newline='') as keystore:
+    reader = csv.reader(keystore)
+    next(reader)
+    data = dict(reader)
 
 def subscribe(chat_id):
     with open("subscribers.txt", "r+") as f:
@@ -46,35 +59,31 @@ def handle(msg):
     print('Got command: %s' % command)
 
     if command == '/start':
-        bot.sendMessage(chat_id, "Hi! I'm Jake! I am a half baked AI bot running on Sagar's Work Machine ready to perform some tasks for you. Pick a command from the list and I will try my best!" + "\n1. /roll - Toll a six sided die.\n2. /time - Show the current system time.\n3. /about - Information about the bot.\n4. /crypto - Get current crypto currency exchange rates.")
+        bot.sendMessage(chat_id, str(data['start']).replace("\\n", "\n"))
     elif command == '/roll':
-        bot.sendMessage(chat_id, str(random.randint(1,6)) + "  That was quick wasn't it?")
+        bot.sendMessage(chat_id, str(random.randint(1,6)) + " " + data['roll'])
     elif command == '/time':
-        bot.sendMessage(chat_id, "The time is " + str(datetime.datetime.now()) + " Well, my watch is quite precise unlike yours!")
+        bot.sendMessage(chat_id, data['time'] + " " + str(time.strftime("%I:%M %p")))
     elif command == '/about':
-        bot.sendMessage(chat_id, "Hi I'm Jake! I am a half baked AI bot created by Sagar. He is still training me to be more useful. Currently I am running on his Work Machine.")
+        bot.sendMessage(chat_id, data['about'])
     elif command == '/subscribe':
         subscribe(str(chat_id))
     elif command == '/unsubscribe':
         unsubscribe(str(chat_id))
     elif command == '/crypto':
-        url = 'https://api.coinbase.com/v2/prices/USD/spot?'
+        # url = 'https://api.coinbase.com/v2/prices/USD/spot?'
+        url = data['crypto_url']
         response = get(url).json()
         bot.sendMessage(chat_id, "BTC: $"+response['data'][0]['amount'] + "\n" + "BCH: $"+response['data'][1]['amount'] + "\n" + "ETH: $"+response['data'][2]['amount'] + "\n" + "LTC: $"+response['data'][3]['amount'])
     else:
-        bot.sendMessage(chat_id, "Oops! I don't seem to understand this command. These are the only commands I can understand: " + "\n1. /roll - Toll a six sided die.\n2. /time - Show the current system time.\n3. /about - Information about the me.\n4. /crypto - Get current crypto currency exchange rates.")
+        bot.sendMessage(chat_id, str(data['error']).replace("\\n", "\n"))
 
-
-keys = {}
-with open('keys.csv', newline='') as keystore:
-    reader = csv.reader(keystore)
-    next(reader)
-    keys = dict(reader)
-
-bot = telepot.Bot(keys['jake_dev'])
 
 MessageLoop(bot, handle).run_as_thread()
 print('I am listening ...')
 
+
 while 1:
-    time.sleep(10)
+    time.sleep(60)
+    if(time.strftime("%H:%M") == "15:15"):
+        sendNotification("This is a test message for 3:12")

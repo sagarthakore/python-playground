@@ -71,7 +71,6 @@ def handle(msg):
     elif command == '/unsubscribe':
         unsubscribe(str(chat_id))
     elif command == '/crypto':
-        # url = 'https://api.coinbase.com/v2/prices/USD/spot?'
         url = data['crypto_url']
         response = get(url).json()
         bot.sendMessage(chat_id, "BTC: $"+response['data'][0]['amount'] + "\n" + "BCH: $"+response['data'][1]['amount'] + "\n" + "ETH: $"+response['data'][2]['amount'] + "\n" + "LTC: $"+response['data'][3]['amount'])

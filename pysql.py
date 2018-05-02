@@ -20,11 +20,11 @@ results = cursor.fetchone()
 
 # Print the results
 while results:
-    print("Policy Id: " + str(results[0]))
-    print("State Code: " + str(results[1]))
-    print("County: " + str(results[2]))
-    print("Latitude: " + str(results[3]))
-    print("Longitude: " + str(results[4]))
+    print("Policy Id: " + str(results.policyID))
+    print("State Code: " + str(results.statecode))
+    print("County: " + str(results.county))
+    print("Latitude: " + str(results.point_latitude))
+    print("Longitude: " + str(results.point_longitude))
     results = cursor.fetchone()
 
 # Close the connection

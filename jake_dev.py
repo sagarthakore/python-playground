@@ -6,51 +6,92 @@ import subprocess
 import csv
 import mmap
 import urllib3
+import pyodbc
+import datetime
 from telepot.loop import MessageLoop
 from requests import get
 
+# Get connection string
 keys = {}
-with open('keys.csv', newline='') as keystore:
+with open('connection.csv', newline='') as keystore:
     reader = csv.reader(keystore)
     next(reader)
     keys = dict(reader)
+connection_string = keys['pydb']
 
-bot = telepot.Bot(keys['jake_dev'])
+# Establish connection to the database
+main_connection = pyodbc.connect(connection_string)
+main_cursor = main_connection.cursor()
 
+# Execute SQL command
+SQLCommand = ("select * from conf_keys where application = 'jake_dev'")
+main_cursor.execute(SQLCommand)
+results = main_cursor.fetchone() 
+
+# Apply the key to bot
+bot = telepot.Bot(str(results.key))
+
+# Execute SQL command
+SQLCommand = ("select * from conf_data")
+main_cursor.execute(SQLCommand)
+results = main_cursor.fetchone() 
+
+# Store results in a dictionary
 data = {}
-with open('data.csv', newline='') as keystore:
-    reader = csv.reader(keystore)
-    next(reader)
-    data = dict(reader)
+while results:
+    data[str(results.key)] = str(results.value)
+    results = main_cursor.fetchone()
+
+
 
 def subscribe(chat_id):
-    with open("subscribers.txt", "r+") as f:
-        for line in f:
-            if chat_id in line:
-                bot.sendMessage(chat_id, "Already Subscribed!")
-                break
-        else:    
-            f.write(str(chat_id + "\n"))
-            bot.sendMessage(chat_id, "Subscription Successful!")
+    io_connection = pyodbc.connect(connection_string)
+    io_cursor = io_connection.cursor()
+    check_command = ("select * from subscribers where subscriber_id = ? and [status] = 1")
+    param_chat_id = chat_id
+    io_cursor.execute(check_command, param_chat_id)
+    results = io_cursor.fetchone()
+    if(results != None):
+        bot.sendMessage(chat_id, "Already Subscribed!") 
+    else:
+        subscribe_command = ("insert into subscribers (subscriber_id, status, create_datetime) values (?,?,?)")
+        values = [str(chat_id), 1, datetime.datetime.now()]
+        io_cursor.execute(subscribe_command, values)
+        io_connection.commit()
+        bot.sendMessage(chat_id, "Subscription Successful!")
+    io_connection.close() 
 
 
 def unsubscribe(chat_id):
-    f = open("subscribers.txt", "r+")
-    d = f.readlines()
-    f.seek(0)
-    for i in d:
-        if i != chat_id + "\n":
-            f.write(i)
-    f.truncate()
-    f.close()
-    bot.sendMessage(chat_id, "Unsubscribed!")        
-        
+    io_connection = pyodbc.connect(connection_string)
+    io_cursor = io_connection.cursor()
+    check_command = ("select * from subscribers where subscriber_id = ? and [status] = 1")
+    param_chat_id = chat_id
+    io_cursor.execute(check_command, param_chat_id)
+    results = io_cursor.fetchone()
+    if(results == None):
+        bot.sendMessage(chat_id, "Not Subscribed!") 
+    else:
+        subscribe_command = ("update subscribers set [status] = 0 , lastupdate_datetime = ? where subscriber_id = ?")
+        values = [datetime.datetime.now(), chat_id]
+        io_cursor.execute(subscribe_command, values)
+        io_connection.commit()
+        bot.sendMessage(chat_id, "Unsubscribed!") 
+    io_connection.close()
 
 def sendNotification(message):
-    f = open("subscribers.txt", "r")
-    for line in f:
-        bot.sendMessage(line, message)
+    io_connection = pyodbc.connect(connection_string)
+    io_cursor = io_connection.cursor()
+    all_subscribers = ("select * from subscribers where [status] = 1")
+    io_cursor.execute(all_subscribers)
+    results = io_cursor.fetchone()
+    while(results):
+        bot.sendMessage(str(results.subscriber_id), message)
+        results = io_cursor.fetchone()
+    io_connection.close()
 
+# Close the connection
+main_connection.close()
 
 def handle(msg):
     chat_id = msg['chat']['id']
@@ -83,6 +124,4 @@ print('I am listening ...')
 
 
 while 1:
-    time.sleep(60)
-    if(time.strftime("%H:%M") == "15:15"):
-        sendNotification("This is a test message for 3:12")
+    time.sleep(10)

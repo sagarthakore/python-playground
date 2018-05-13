@@ -8,6 +8,7 @@ import mmap
 import urllib3
 import pyodbc
 import datetime
+import googlemaps
 from telepot.loop import MessageLoop
 from requests import get
 
@@ -22,6 +23,14 @@ connection_string = keys['pydb']
 # Establish connection to the database
 main_connection = pyodbc.connect(connection_string)
 main_cursor = main_connection.cursor()
+
+# Execute SQL command
+SQLCommand = ("select * from conf_keys where application = 'gmaps'")
+main_cursor.execute(SQLCommand)
+results = main_cursor.fetchone() 
+
+# Apply the key to gmaps
+gmaps = googlemaps.Client(key=str(results.key))
 
 # Execute SQL command
 SQLCommand = ("select * from conf_keys where application = 'jake_dev'")
@@ -115,6 +124,14 @@ def handle(msg):
         url = data['crypto_url']
         response = get(url).json()
         bot.sendMessage(chat_id, "BTC: $"+response['data'][0]['amount'] + "\n" + "BCH: $"+response['data'][1]['amount'] + "\n" + "ETH: $"+response['data'][2]['amount'] + "\n" + "LTC: $"+response['data'][3]['amount'])
+    elif command == '/formataddress':
+        bot.sendMessage(chat_id, data['address_input'])
+    elif command[:7].lower() == "address":
+        try:
+            geocode_result = gmaps.geocode(msg['text'][1:])
+            bot.sendMessage(chat_id, "Formatted Address: \n" + str(geocode_result[0]['formatted_address']))
+        except:
+            bot.sendMessage(chat_id, data['address_error'])
     else:
         bot.sendMessage(chat_id, str(data['error']).replace("\\n", "\n"))
 

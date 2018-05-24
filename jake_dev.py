@@ -136,8 +136,8 @@ def setReminder(chat_id, name, daily, day, time, message):
     if(results != None):
         bot.sendMessage(chat_id, "A reminder with that name already exists. Please choose a different name!") 
     else:
-        set_reminder = ("insert into reminders (subscriber_id, name, daily, day, time, status, create_datetime) values (?,?,?,?,?,?)")
-        values = [str(chat_id), str(name), int(daily), int(day), time, 1, datetime.datetime.now()]
+        set_reminder = ("insert into reminders (subscriber_id, name, daily, day, time, message, status, create_datetime) values (?,?,?,?,?,?)")
+        values = [str(chat_id), str(name), int(daily), int(day), time, message, 1, datetime.datetime.now()]
         io_cursor.execute(set_reminder, values)
         io_connection.commit()
         bot.sendMessage(chat_id, "Reminder Set!")

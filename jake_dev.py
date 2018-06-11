@@ -163,12 +163,15 @@ def showAllReminders(chat_id):
     results = io_cursor.fetchone()
     reminderlist = []
     reminderstring = ""
-    while(results):
-        reminderlist.append(results.name)
-        results = io_cursor.fetchone()
-    for remindername in reminderlist:
-        reminderstring = reminderstring + remindername + "\n"    
-    bot.sendMessage(chat_id, reminderstring + "\n")
+    if(results == None):
+        bot.sendMessage(chat_id, data['reminder_noreminders'])
+    else:
+        while(results):
+            reminderlist.append(results.name)
+            results = io_cursor.fetchone()
+        for remindername in reminderlist:
+            reminderstring = reminderstring + remindername + "\n"    
+        bot.sendMessage(chat_id, reminderstring + "\n")
     io_connection.close()
 
 def deleteReminder(chat_id, name):

@@ -41,17 +41,17 @@ results = main_cursor.fetchone()
 # Apply the key to bot
 bot = telepot.Bot(str(results.key))
 
-# Execute SQL command
-SQLCommand = ("select * from conf_data")
-main_cursor.execute(SQLCommand)
-results = main_cursor.fetchone() 
-
-# Store results in a dictionary
 data = {}
-while results:
-    data[str(results.key)] = str(results.value)
-    results = main_cursor.fetchone()
-
+def getRefreshConfData():
+    io_connection = pyodbc.connect(connection_string)
+    io_cursor = io_connection.cursor()
+    SQLCommand = ("select * from conf_data")
+    io_cursor.execute(SQLCommand)
+    results = io_cursor.fetchone() 
+    while results:
+        data[str(results.key)] = str(results.value)
+        results = io_cursor.fetchone()
+    io_connection.close()
 
 def subscribe(chat_id):
     io_connection = pyodbc.connect(connection_string)
@@ -61,13 +61,13 @@ def subscribe(chat_id):
     io_cursor.execute(check_command, param_chat_id)
     results = io_cursor.fetchone()
     if(results != None):
-        bot.sendMessage(chat_id, "Already Subscribed!") 
+        bot.sendMessage(chat_id, data['subscribe_already_subscribed']) 
     else:
         subscribe_command = ("insert into subscribers (subscriber_id, status, create_datetime) values (?,?,?)")
         values = [str(chat_id), 1, datetime.datetime.now()]
         io_cursor.execute(subscribe_command, values)
         io_connection.commit()
-        bot.sendMessage(chat_id, "Subscription Successful!")
+        bot.sendMessage(chat_id, data['subscribe_success'])
     io_connection.close() 
 
 
@@ -79,13 +79,13 @@ def unsubscribe(chat_id):
     io_cursor.execute(check_command, param_chat_id)
     results = io_cursor.fetchone()
     if(results == None):
-        bot.sendMessage(chat_id, "Not Subscribed!") 
+        bot.sendMessage(chat_id, data['subscribe_not_subscribed']) 
     else:
         subscribe_command = ("update subscribers set [status] = 0 , lastupdate_datetime = ? where subscriber_id = ?")
         values = [datetime.datetime.now(), chat_id]
         io_cursor.execute(subscribe_command, values)
         io_connection.commit()
-        bot.sendMessage(chat_id, "Unsubscribed!") 
+        bot.sendMessage(chat_id, data['subscribe_unsubscribe']) 
     io_connection.close()
 
 def sendNotification(message):
@@ -128,7 +128,6 @@ def sendReminders():
     io_connection.close()
 
 def convertToUTC24(input_time):
-
     curr_date = datetime.datetime.now().date()
     time_string = str(curr_date) + " " + input_time
     local = pytz.timezone ("US/Eastern")
@@ -146,13 +145,13 @@ def setReminder(chat_id, name, daily, day, time, message):
     io_cursor.execute(check_command, name, param_chat_id)
     results = io_cursor.fetchone()
     if(results != None):
-        bot.sendMessage(chat_id, "A reminder with that name already exists. Please choose a different name!") 
+        bot.sendMessage(chat_id, data['reminder_set_exists']) 
     else:
         set_reminder = ("insert into reminders (subscriber_id, name, daily, day, time, message, status, create_datetime) values (?,?,?,?,?,?,?,?)")
         values = [str(chat_id), str(name), int(daily), int(day), time, message, 1, datetime.datetime.now()]
         io_cursor.execute(set_reminder, values)
         io_connection.commit()
-        bot.sendMessage(chat_id, "Reminder Set!")
+        bot.sendMessage(chat_id, data['reminder_set_success'])
     io_connection.close()
 
 def showAllReminders(chat_id):
@@ -163,28 +162,30 @@ def showAllReminders(chat_id):
     io_cursor.execute(show_reminders, values)
     results = io_cursor.fetchone()
     reminderlist = []
+    reminderstring = ""
     while(results):
         reminderlist.append(results.name)
         results = io_cursor.fetchone()
     for remindername in reminderlist:
-        bot.sendMessage(chat_id, remindername + "\n")
+        reminderstring = reminderstring + remindername + "\n"    
+    bot.sendMessage(chat_id, reminderstring + "\n")
     io_connection.close()
 
 def deleteReminder(chat_id, name):
     io_connection = pyodbc.connect(connection_string)
     io_cursor = io_connection.cursor()
-    check_reminder = ("select * from reminders where subscriber_id = ? and [status] = 1")
-    param_chat_id = chat_id
-    io_cursor.execute(check_reminder, param_chat_id)
+    check_reminder = ("select * from reminders where name = ? and subscriber_id = ? and [status] = 1")
+    params = [str(name), str(chat_id)]
+    io_cursor.execute(check_reminder, params)
     results = io_cursor.fetchone()
-    if(results != None):
-        bot.sendMessage(chat_id, "No reminder set with that name!") 
+    if(results == None):
+        bot.sendMessage(chat_id, data['reminder_noreminder']) 
     else:
         delete_reminder = ("update reminders set [status] = 0 , lastupdate_datetime = ? where subscriber_id = ? and name = ?")
         values = [datetime.datetime.now(), str(chat_id), str(name)]
         io_cursor.execute(delete_reminder, values)
         io_connection.commit()
-        bot.sendMessage(chat_id, "Reminder Deleted!")
+        bot.sendMessage(chat_id, data['reminder_delete_success'])
     io_connection.close()
 
 # Close the connection
@@ -230,14 +231,26 @@ def handle(msg):
             setReminder(chat_id, reminder[1], reminder[2], reminder[3], reminder_time, reminder[5])
         except:
             bot.sendMessage(chat_id, data['reminder_error'])
+    elif command == '/showreminders':
+        showAllReminders(chat_id)
+    elif command == '/deletereminder':
+        bot.sendMessage(chat_id, data['reminder_delete'])
+    elif command[:6].lower() == "delete":
+        try:
+            reminder = []
+            reminder = str(msg['text']).split(",")
+            reminder_name = reminder[1]
+            deleteReminder(chat_id, reminder_name)
+        except:
+            bot.sendMessage(chat_id, data['reminder_delete_error'])
     else:
         bot.sendMessage(chat_id, str(data['error']).replace("\\n", "\n"))
 
-
+getRefreshConfData()
 MessageLoop(bot, handle).run_as_thread()
 print('I am listening ...')
-
 
 while 1:
     time.sleep(60)
     sendReminders()
+    getRefreshConfData()
